@@ -1,0 +1,17 @@
+[package]
+name = "eth_fetcher"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy = { version = "0.8.3", features = ["full"] }
+axum = "0.7.9"
+dotenv = "0.15.0"
+eyre = "0.6.12"
+hex = "0.4.3"
+reqwest = "0.12.9"
+rlp = "0.6.1"
+serde = "1.0.216"
+serde_json = "1.0.134"
+sqlx = { version = "0.8.2", features = ["postgres", "runtime-tokio", "runtime-tokio-native-tls"] }
+tokio = { version = "1.42.0", features = ["full"] }
