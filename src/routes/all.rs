@@ -13,6 +13,6 @@ pub async fn fetch_all_saved_trx(State(state): State<AppState>) -> Json<FetchRes
     let result = fetch_all_transactions(&state.db_connection).await.unwrap();
 
     Json(FetchResponse {
-        transaction: result,
+        transactions: result,
     })
 }

@@ -71,6 +71,6 @@ pub async fn fetch_eth_txs(
     }
 
     Json(FetchResponse {
-        transaction: result,
+        transactions: result,
     })
 }

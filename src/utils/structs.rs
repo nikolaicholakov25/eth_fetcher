@@ -31,5 +31,5 @@ pub struct ResultTransaction {
 }
 #[derive(Serialize)]
 pub struct FetchResponse {
-    pub transaction: Vec<ResultTransaction>,
+    pub transactions: Vec<ResultTransaction>,
 }
