@@ -26,5 +26,6 @@ pub static ETH_NODE_URL: LazyLock<String> =
 pub static DB_CONNECTION_URL: LazyLock<String> =
     LazyLock::new(|| env::var("DB_CONNECTION_URL").expect("DB_CONNECTION_URL is not set"));
 
+#[allow(dead_code)]
 pub static JWT_SECRET: LazyLock<String> =
     LazyLock::new(|| env::var("JWT_SECRET").expect("JWT_SECRET is not set"));

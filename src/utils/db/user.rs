@@ -24,8 +24,6 @@ pub async fn login_user(
     user_name: &String,
     password: &String,
 ) -> Result<DbUser, sqlx::Error> {
-    println!("username {}", user_name);
-    println!("password {}", password);
     let user = sqlx::query_as::<_, DbUser>(
         r#"
     SELECT
@@ -82,4 +80,20 @@ pub async fn seed_users(pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
     .await?;
 
     Ok(())
+}
+
+pub async fn save_user_trx(pool: &Pool<Postgres>, trx: &String, user_name: &String) {
+    sqlx::query(
+        r#"
+        UPDATE users
+        SET transactions = ARRAY_APPEND(transactions, $1)
+        WHERE name = $2 AND NOT $3 = ANY(transactions)
+        "#,
+    )
+    .bind(trx)
+    .bind(user_name)
+    .bind(trx)
+    .execute(pool)
+    .await
+    .unwrap();
 }

@@ -1,6 +1,5 @@
 use axum::{
     extract::State,
-    http::HeaderMap,
     routing::{get, post},
     Json, Router,
 };
@@ -9,16 +8,19 @@ use reqwest::StatusCode;
 use crate::{
     config::AppState,
     utils::{
-        auth::{decode_jwt, generate_jwt, return_jwt},
-        db::user::{fetch_user, login_user},
-        structs::auth::{AuthPayload, AuthResponse, AuthUser, DbUser, JwtPayload},
+        auth::{generate_jwt, return_jwt},
+        db::{transaction::fetch_matching_transactions, user::login_user},
+        structs::{
+            auth::{AuthPayload, AuthResponse, AuthUser},
+            transaction::FetchResponse,
+        },
     },
 };
 
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/authenticate", post(authenticate))
-        .route("/me", get(me))
+        .route("/my", get(my))
 }
 
 pub async fn authenticate(
@@ -31,6 +33,14 @@ pub async fn authenticate(
     }
 }
 
-pub async fn me(State(state): State<AppState>, user: AuthUser) {
-    println!("{:?}", user);
+pub async fn my(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<FetchResponse>, StatusCode> {
+    match fetch_matching_transactions(&state.db_connection, user.db_user().transactions.clone())
+        .await
+    {
+        Ok(transactions) => Ok(Json(FetchResponse { transactions })),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
 }

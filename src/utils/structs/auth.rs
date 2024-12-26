@@ -13,8 +13,13 @@ pub struct AuthPayload {
     pub password: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthUser(DbUser);
+impl AuthUser {
+    pub fn db_user(&self) -> &DbUser {
+        &self.0 // Accessing the inner DbUser
+    }
+}
 #[async_trait]
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = StatusCode;
@@ -46,7 +51,7 @@ pub struct AuthResponse {
     pub token: String,
 }
 
-#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
+#[derive(sqlx::FromRow, Debug, Serialize, Deserialize, Clone)]
 pub struct DbUser {
     pub name: String,
     pub transactions: Vec<String>,

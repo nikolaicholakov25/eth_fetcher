@@ -115,3 +115,33 @@ pub async fn fetch_all_transactions(
 
     Ok(transaction)
 }
+
+pub async fn fetch_matching_transactions(
+    pool: &Pool<Postgres>,
+    transaction_hashes: Vec<String>,
+) -> Result<Vec<ResultTransaction>, sqlx::Error> {
+    // Convert Vec<String> to a format suitable for SQL
+    let placeholders: Vec<String> = transaction_hashes
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("${}", i + 1))
+        .collect();
+
+    let query = format!(
+        r#"
+        SELECT * FROM transactions
+        WHERE transaction_hash = ANY(ARRAY[{}]::TEXT[])
+        "#,
+        placeholders.join(", ")
+    );
+
+    // bind all trx hashes
+    let mut query_builder = sqlx::query_as::<_, ResultTransaction>(&query);
+    for hash in transaction_hashes {
+        query_builder = query_builder.bind(hash);
+    }
+
+    let transactions = query_builder.fetch_all(pool).await?;
+
+    Ok(transactions)
+}

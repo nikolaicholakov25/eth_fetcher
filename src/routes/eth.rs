@@ -1,7 +1,7 @@
 use crate::{
     utils::{
         chain::fetch_from_chain,
-        db::transaction::check_transaction_in_db,
+        db::{transaction::check_transaction_in_db, user::save_user_trx},
         rlp::{decode_rlp_encoded_list, encode_hexes_to_rlp},
         structs::{
             auth::AuthUser,
@@ -56,6 +56,16 @@ pub async fn fetch_eth_txs(
 
     for i in 0..query_list.len() {
         let transaction_hash = query_list.get(i).unwrap();
+
+        // save user trx if authenticated
+        if let Some(auth_user) = &user {
+            save_user_trx(
+                &state.db_connection,
+                transaction_hash,
+                &auth_user.db_user().name,
+            )
+            .await;
+        };
 
         match check_transaction_in_db(&state.db_connection, transaction_hash).await {
             Ok(Some(res)) => {
