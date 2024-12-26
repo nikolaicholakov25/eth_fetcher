@@ -7,7 +7,10 @@ use alloy::{
     transports::{RpcError, TransportErrorKind},
 };
 
-use super::{db::save_transaction_to_db, misc::parse_b256_from_str, structs::ResultTransaction};
+use super::{
+    db::transaction::save_transaction_to_db, misc::parse_b256_from_str,
+    structs::transaction::ResultTransaction,
+};
 
 fn unwrap_receipt(
     receipt: Result<Option<TransactionReceipt>, RpcError<TransportErrorKind>>,

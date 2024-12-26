@@ -2,7 +2,7 @@ use axum::{extract::State, routing::get, Json, Router};
 
 use crate::{
     config::AppState,
-    utils::{db::fetch_all_transactions, structs::FetchResponse},
+    utils::{db::transaction::fetch_all_transactions, structs::transaction::FetchResponse},
 };
 
 pub fn routes() -> Router<AppState> {

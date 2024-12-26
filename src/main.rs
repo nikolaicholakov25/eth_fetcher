@@ -5,6 +5,7 @@ mod utils;
 use alloy::providers::ProviderBuilder;
 use axum::Router;
 use config::{load_config, AppState, API_PORT, DB_CONNECTION_URL, ETH_NODE_URL};
+use utils::db::set_up::init_db;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -20,10 +21,13 @@ async fn main() {
             .unwrap(),
     };
 
+    init_db(&shared_state.db_connection).await.unwrap();
+
     // build routes
     let app = Router::new()
         .nest("/lime/eth", routes::eth::routes())
         .nest("/lime/all", routes::all::routes())
+        .nest("/lime/", routes::auth::routes())
         .with_state(shared_state);
 
     // listen for server

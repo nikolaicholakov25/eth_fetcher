@@ -1,14 +1,11 @@
 use sqlx::{Pool, Postgres};
 
-use super::structs::ResultTransaction;
+use crate::utils::structs::transaction::ResultTransaction;
 
 pub async fn save_transaction_to_db(
     pool: &Pool<Postgres>,
     trx: &ResultTransaction,
 ) -> Result<(), sqlx::Error> {
-    // Ensure the "transactions" table exists
-    create_trx_table(pool).await;
-
     // save transaction
     sqlx::query(
         r#"
@@ -47,9 +44,6 @@ pub async fn check_transaction_in_db(
     pool: &Pool<Postgres>,
     trx_hash: &String,
 ) -> Result<Option<ResultTransaction>, sqlx::Error> {
-    // Ensure the "transactions" table exists
-    create_trx_table(pool).await;
-
     let transaction = sqlx::query_as::<_, ResultTransaction>(
         r#"
         SELECT
@@ -100,9 +94,6 @@ pub async fn create_trx_table(pool: &Pool<Postgres>) {
 pub async fn fetch_all_transactions(
     pool: &Pool<Postgres>,
 ) -> Result<Vec<ResultTransaction>, sqlx::Error> {
-    // Ensure the "transactions" table exists
-    create_trx_table(pool).await;
-
     let transaction = sqlx::query_as::<_, ResultTransaction>(
         r#"
         SELECT

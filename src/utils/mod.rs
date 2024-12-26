@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod chain;
 pub mod db;
 pub mod misc;

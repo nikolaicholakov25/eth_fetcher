@@ -11,7 +11,7 @@ pub fn load_config() {
     dotenv::dotenv().ok();
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     pub eth_client: RootProvider<Http<Client>>,
     pub db_connection: Pool<Postgres>,

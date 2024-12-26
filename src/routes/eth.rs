@@ -1,9 +1,12 @@
 use crate::{
     utils::{
         chain::fetch_from_chain,
-        db::check_transaction_in_db,
+        db::transaction::check_transaction_in_db,
         rlp::{decode_rlp_encoded_list, encode_hexes_to_rlp},
-        structs::{FetchResponse, ResultTransaction, TransactionHashesQuery},
+        structs::{
+            auth::AuthUser,
+            transaction::{FetchResponse, ResultTransaction, TransactionHashesQuery},
+        },
     },
     AppState,
 };
@@ -17,11 +20,13 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/",
-            get(|app_state, query| fetch_eth_txs(app_state, query, None, false)),
+            get(|app_state, query, user| fetch_eth_txs(app_state, query, None, false, user)),
         )
         .route(
             "/:rlp",
-            get(|app_state, query, path| fetch_eth_txs(app_state, query, Some(path), true)),
+            get(|app_state, query, path, user| {
+                fetch_eth_txs(app_state, query, Some(path), true, user)
+            }),
         )
 }
 
@@ -30,6 +35,7 @@ pub async fn fetch_eth_txs(
     Query(query): Query<TransactionHashesQuery>,
     rlp: Option<Path<String>>,
     are_rlp_encoded: bool,
+    user: Option<AuthUser>,
 ) -> Json<FetchResponse> {
     let mut result: Vec<ResultTransaction> = vec![];
 
@@ -38,6 +44,8 @@ pub async fn fetch_eth_txs(
             Ok(trx_hashes) => trx_hashes
                 .clone()
                 .iter_mut()
+                // the decoded rlp hexes are missing the "0x" prefix
+                // added it for consistency
                 .map(|hash| format!("0x{}", hash))
                 .collect(),
             Err(_) => vec![],
@@ -45,9 +53,6 @@ pub async fn fetch_eth_txs(
     } else {
         query.transaction_hashes
     };
-
-    // let encoded = encode_hexes_to_rlp(&query_list).await;
-    // println!("rlp_encoded, {:#?}", encoded);
 
     for i in 0..query_list.len() {
         let transaction_hash = query_list.get(i).unwrap();
