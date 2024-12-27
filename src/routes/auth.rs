@@ -27,7 +27,7 @@ pub async fn authenticate(
     State(state): State<AppState>,
     Json(payload): Json<AuthPayload>,
 ) -> Result<Json<AuthResponse>, StatusCode> {
-    match login_user(&state.db_connection, &payload.user, &payload.password).await {
+    match login_user(&state.db_connection, &payload.username, &payload.password).await {
         Ok(_) => return_jwt(generate_jwt(payload)).await,
         _ => Err(StatusCode::UNAUTHORIZED),
     }

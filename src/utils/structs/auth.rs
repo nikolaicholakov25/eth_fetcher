@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthPayload {
-    pub user: String,
+    pub username: String,
     pub password: String,
 }
 

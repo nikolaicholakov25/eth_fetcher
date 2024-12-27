@@ -10,7 +10,7 @@ pub fn generate_jwt(payload: AuthPayload) -> Result<String, Error> {
     encode(
         &Header::default(),
         &JwtPayload {
-            user: payload.user,
+            user: payload.username,
             exp: get_current_timestamp() + 60 * 60 * 10, // 10 hours in sec,
         },
         &EncodingKey::from_secret("JWT_SECRET".as_ref()),
