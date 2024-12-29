@@ -2,7 +2,7 @@ use crate::{
     utils::{
         chain::fetch_from_chain,
         db::{transaction::check_transaction_in_db, user::save_user_trx},
-        rlp::{decode_rlp_encoded_list, encode_hexes_to_rlp},
+        rlp::decode_rlp_encoded_list,
         structs::{
             auth::AuthUser,
             transaction::{FetchResponse, ResultTransaction, TransactionHashesQuery},
@@ -40,7 +40,7 @@ pub async fn fetch_eth_txs(
     let mut result: Vec<ResultTransaction> = vec![];
 
     let query_list = if are_rlp_encoded {
-        match decode_rlp_encoded_list(&rlp.unwrap()).await {
+        match decode_rlp_encoded_list(&rlp.unwrap()) {
             Ok(trx_hashes) => trx_hashes
                 .clone()
                 .iter_mut()
@@ -57,23 +57,26 @@ pub async fn fetch_eth_txs(
     for i in 0..query_list.len() {
         let transaction_hash = query_list.get(i).unwrap();
 
-        // save user trx if authenticated
-        if let Some(auth_user) = &user {
-            save_user_trx(
-                &state.db_connection,
-                transaction_hash,
-                &auth_user.db_user().name,
-            )
-            .await;
-        };
-
         match check_transaction_in_db(&state.db_connection, transaction_hash).await {
             Ok(Some(res)) => {
                 println!("{} fetched from db", transaction_hash);
                 result.push(res)
             }
             Ok(None) => match fetch_from_chain(transaction_hash, &state, &mut result).await {
-                Ok(_) => println!("{} fetched and saved in db", transaction_hash),
+                Ok(_) => {
+                    println!("{} fetched and saved in db", transaction_hash);
+
+                    // save user trx if authenticated and if trx exists
+                    if let Some(auth_user) = &user {
+                        save_user_trx(
+                            &state.db_connection,
+                            transaction_hash,
+                            &auth_user.db_user().name,
+                        )
+                        .await
+                        .expect("Failed to save user_trx");
+                    };
+                }
                 Err(err_msg) => {
                     println!(
                         "Failed to fetch {} from chain, error:{}",

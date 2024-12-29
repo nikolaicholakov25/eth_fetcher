@@ -1,8 +1,10 @@
-use sqlx::{Pool, Postgres};
+use crate::utils::structs::auth::DbUser;
+use sqlx::{Executor, Postgres};
 
-use crate::utils::structs::auth::{AuthPayload, DbUser};
-
-pub async fn fetch_user(pool: &Pool<Postgres>, user_name: &String) -> Result<DbUser, sqlx::Error> {
+pub async fn fetch_user<'c, E>(executor: E, user_name: &String) -> Result<DbUser, sqlx::Error>
+where
+    E: Executor<'c, Database = Postgres>,
+{
     let user = sqlx::query_as::<_, DbUser>(
         r#"
     SELECT
@@ -13,17 +15,20 @@ pub async fn fetch_user(pool: &Pool<Postgres>, user_name: &String) -> Result<DbU
     "#,
     )
     .bind(user_name)
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await?;
 
     Ok(user)
 }
 
-pub async fn login_user(
-    pool: &Pool<Postgres>,
+pub async fn login_user<'c, E>(
+    executor: E,
     user_name: &String,
     password: &String,
-) -> Result<DbUser, sqlx::Error> {
+) -> Result<DbUser, sqlx::Error>
+where
+    E: Executor<'c, Database = Postgres>,
+{
     let user = sqlx::query_as::<_, DbUser>(
         r#"
     SELECT
@@ -35,13 +40,16 @@ pub async fn login_user(
     )
     .bind(user_name)
     .bind(password)
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await?;
 
     Ok(user)
 }
 
-pub async fn create_users_table(pool: &Pool<Postgres>) {
+pub async fn create_users_table<'c, E>(executor: E) -> Result<(), sqlx::Error>
+where
+    E: Executor<'c, Database = Postgres>,
+{
     // Ensure the "USERS" table exists
     sqlx::query(
         r#"
@@ -52,12 +60,16 @@ pub async fn create_users_table(pool: &Pool<Postgres>) {
         )
         "#,
     )
-    .execute(pool)
-    .await
-    .unwrap();
+    .execute(executor)
+    .await?;
+
+    Ok(())
 }
 
-pub async fn seed_users(pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
+pub async fn seed_users<'c, E>(executor: E) -> Result<(), sqlx::Error>
+where
+    E: Executor<'c, Database = Postgres>,
+{
     sqlx::query(
         r#"
         INSERT INTO users (name, password) VALUES
@@ -76,13 +88,20 @@ pub async fn seed_users(pool: &Pool<Postgres>) -> Result<(), sqlx::Error> {
     .bind("carol")
     .bind("dave")
     .bind("dave")
-    .execute(pool)
+    .execute(executor)
     .await?;
 
     Ok(())
 }
 
-pub async fn save_user_trx(pool: &Pool<Postgres>, trx: &String, user_name: &String) {
+pub async fn save_user_trx<'c, E>(
+    executor: E,
+    trx: &String,
+    user_name: &String,
+) -> Result<(), sqlx::Error>
+where
+    E: Executor<'c, Database = Postgres>,
+{
     sqlx::query(
         r#"
         UPDATE users
@@ -93,7 +112,133 @@ pub async fn save_user_trx(pool: &Pool<Postgres>, trx: &String, user_name: &Stri
     .bind(trx)
     .bind(user_name)
     .bind(trx)
-    .execute(pool)
-    .await
-    .unwrap();
+    .execute(executor)
+    .await?;
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::load_config;
+
+    use super::*;
+    use sqlx::{Pool, Postgres};
+    use std::env;
+
+    async fn fixture_pool() -> Pool<Postgres> {
+        load_config();
+
+        let database_url = env::var("DB_CONNECTION_URL").expect("DB_CONNECTION_URL must be set");
+        let pool = Pool::<Postgres>::connect(&database_url)
+            .await
+            .expect("Failed to connect to the database");
+
+        pool
+    }
+
+    #[tokio::test]
+    async fn test_fetch_user() {
+        let pool = fixture_pool().await;
+        let mut db_trx = pool.begin().await.expect("Pool transaction failed");
+
+        create_users_table(&mut *db_trx)
+            .await
+            .expect("Failed to create USERS table");
+        seed_users(&mut *db_trx)
+            .await
+            .expect("Failed to seed USERS table");
+
+        let user_name = "alice".to_string();
+        let user = fetch_user(&mut *db_trx, &user_name)
+            .await
+            .expect("Failed to fetch user");
+
+        assert_eq!(user.name, "alice", "Fetched user name should match");
+        db_trx
+            .rollback()
+            .await
+            .expect("Failed to rollback test trx");
+    }
+
+    #[tokio::test]
+    async fn test_login_user_success() {
+        let pool = fixture_pool().await;
+        let mut db_trx = pool.begin().await.expect("Pool transaction failed");
+
+        create_users_table(&mut *db_trx)
+            .await
+            .expect("Failed to create USERS table");
+        seed_users(&mut *db_trx)
+            .await
+            .expect("Failed to seed USERS table");
+
+        let user_name = "bob".to_string();
+        let password = "bob".to_string();
+        let user = login_user(&mut *db_trx, &user_name, &password)
+            .await
+            .expect("Failed to log in user");
+
+        assert_eq!(user.name, "bob", "Logged in user name should match");
+        db_trx
+            .rollback()
+            .await
+            .expect("Failed to rollback test trx");
+    }
+
+    #[tokio::test]
+    async fn test_login_user_failure() {
+        let pool = fixture_pool().await;
+        let mut db_trx = pool.begin().await.expect("Pool transaction failed");
+
+        create_users_table(&mut *db_trx)
+            .await
+            .expect("Failed to create USERS table");
+        seed_users(&mut *db_trx)
+            .await
+            .expect("Failed to seed USERS table");
+
+        let user_name = "bob".to_string();
+        let password = "wrong_password".to_string();
+        let result = login_user(&mut *db_trx, &user_name, &password).await;
+
+        assert!(result.is_err(), "Login with incorrect password should fail");
+        db_trx
+            .rollback()
+            .await
+            .expect("Failed to rollback test trx");
+    }
+
+    #[tokio::test]
+    async fn test_save_user_trx() {
+        let pool = fixture_pool().await;
+        let mut db_trx = pool.begin().await.expect("Pool transaction failed");
+
+        create_users_table(&mut *db_trx)
+            .await
+            .expect("Failed to create USERS table");
+        seed_users(&mut *db_trx)
+            .await
+            .expect("Failed to seed USERS table");
+
+        let user_name = "bob".to_string();
+        let test_transaction_name: String = "test_trx".to_string();
+
+        // save test_trx
+        save_user_trx(&mut *db_trx, &test_transaction_name, &user_name)
+            .await
+            .expect("Failed to save user transaction");
+
+        // try fetching for test_trx
+        let fetched_user = fetch_user(&mut *db_trx, &user_name)
+            .await
+            .expect("Failed fetching user");
+
+        assert!(fetched_user.transactions.contains(&test_transaction_name));
+
+        db_trx
+            .rollback()
+            .await
+            .expect("Failed to rollback test trx");
+    }
 }

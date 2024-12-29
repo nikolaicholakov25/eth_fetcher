@@ -1,4 +1,4 @@
-use axum::{async_trait, extract::FromRequestParts, http::request::Parts, Json};
+use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +29,7 @@ impl FromRequestParts<AppState> for AuthUser {
         state: &AppState,
     ) -> Result<AuthUser, Self::Rejection> {
         match parts.headers.get("auth_token") {
-            Some(auth_token) => match decode_jwt(auth_token.to_str().unwrap().to_string()).await {
+            Some(auth_token) => match decode_jwt(auth_token.to_str().unwrap().to_string()) {
                 Ok(token) => match fetch_user(&state.db_connection, &token.claims.user).await {
                     Ok(db_user) => Ok(AuthUser(db_user)),
                     Err(_) => Err(StatusCode::UNAUTHORIZED),

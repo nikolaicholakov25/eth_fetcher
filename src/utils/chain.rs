@@ -103,26 +103,20 @@ pub async fn fetch_from_chain(
                     };
 
                     // save trx to db
-                    let db_result = save_transaction_to_db(&state.db_connection, &mapped_trx).await;
-
-                    match db_result {
-                        Ok(_) => println!("Transaction saved to db"),
-                        Err(error) => {
-                            println!(
-                                "Failed to save trx - {} in db: {:#?}",
-                                transaction_hash, error
-                            )
-                        }
-                    }
+                    save_transaction_to_db(&state.db_connection, &mapped_trx)
+                        .await
+                        .expect(
+                            format!("Failed to save trx - {} in db", transaction_hash).as_str(),
+                        );
 
                     // add to result VEC
                     result.push(mapped_trx);
                 }
                 None => {
-                    println!(
+                    return Err(format!(
                         "No transaction found for trx_hash {}",
                         b256_transaction_hash
-                    );
+                    ));
                 }
             }
         }
