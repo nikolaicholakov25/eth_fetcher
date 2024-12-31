@@ -31,8 +31,9 @@ async fn main() {
         .with_state(shared_state);
 
     // listen for server
-    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", API_PORT.to_string()))
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", API_PORT.to_string()))
         .await
         .unwrap();
+
     axum::serve(listener, app).await.unwrap();
 }
