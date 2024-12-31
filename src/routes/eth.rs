@@ -60,7 +60,18 @@ pub async fn fetch_eth_txs(
         match check_transaction_in_db(&state.db_connection, transaction_hash).await {
             Ok(Some(res)) => {
                 println!("{} fetched from db", transaction_hash);
-                result.push(res)
+                result.push(res);
+
+                // save user trx if authenticated
+                if let Some(auth_user) = &user {
+                    save_user_trx(
+                        &state.db_connection,
+                        transaction_hash,
+                        &auth_user.db_user().name,
+                    )
+                    .await
+                    .expect("Failed to save user_trx");
+                };
             }
             Ok(None) => match fetch_from_chain(transaction_hash, &state, &mut result).await {
                 Ok(_) => {
