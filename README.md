@@ -59,6 +59,10 @@ Create and run a docker image
 | :-------- | :------- | :------------------------- |
 | `transactionHashes` | `string[]` | The hashes of the transactions you want to fetch  |
 
+| Request Header | Type     | Description                |
+| :-------- | :------- | :------------------------- |
+| `AUTH_TOKEN` **optional** | `string` | The jwt token returned from **POST /lime/authenticate**. When authenticated the searched transactions will be saved  |
+
 #### Get eth transactions by **rlp encoded** transaction hashes list
 
 ```bash
@@ -68,6 +72,10 @@ Create and run a docker image
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
 | `rlphex`      | `string` | The **rlp encoded** list of transaction hashes you want to fetch |
+
+| Request Header | Type     | Description                |
+| :-------- | :------- | :------------------------- |
+| `AUTH_TOKEN` **optional** | `string` | The jwt token returned from **POST /lime/authenticate**. When authenticated the searched transactions will be saved  |
 
 #### Each transaction, once fetched will be saved in a **PostgreSQL Database**, this endpoint returns all saved transactions
 
