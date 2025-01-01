@@ -20,9 +20,9 @@ Go to the project directory
 
 `API_PORT=3000`
 
-`ETH_NODE_URL=` (the service was developed and tested with [infura.io](https://www.infura.io/) url)
+`ETH_NODE_URL=` (the service was developed and tested with [infura.io](https://www.infura.io/) provider url)
 
-`DB_CONNECTION_URL=` (PostgreSQL connection)
+`DB_CONNECTION_URL=` (PostgreSQL database connection)
 
 `JWT_SECRET=`
 
@@ -51,7 +51,7 @@ Create and run a docker image
 
 #### Get eth transactions by their hashes
 
-```http
+```bash
   GET /lime/eth?transactionHashes=0x...,0x...
 ```
 
@@ -61,7 +61,7 @@ Create and run a docker image
 
 #### Get eth transactions by **rlp encoded** transaction hashes list
 
-```http
+```bash
   GET /lime/eth/:rlphex
 ```
 
@@ -71,13 +71,13 @@ Create and run a docker image
 
 #### Each transaction, once fetched will be saved in a **PostgreSQL Database**, this endpoint returns all saved transactions
 
-```http
+```bash
   GET /lime/all
 ```
 
 #### Calling endpoints /lime/eth?transactionHashes and /lime/eth/:rlphex, when authenticated will save your searches in the database. Calling this endpoint will return all searched transactions
 
-```http
+```bash
   GET /lime/my
 ```
 
@@ -90,7 +90,7 @@ Create and run a docker image
 
 #### Authenticate and receive a jwt auth token for subsequent requests
 
-```http
+```bash
   POST /lime/authenticate
 ```
 
@@ -115,7 +115,7 @@ Create and run a docker image
 
 #### Fetch transaction data from transaction hashes
 Request
-```http
+```bash
   GET /lime/eth?transactionHashes=0xbdb191d7ee7c25cc144b4ba35ea06cc912762495a66ad0336a7cabc5ab31c36f,0x81d89a76c55b3a7460bcb189ae930f25e8be566e44f22036e32e2f5765f82bab
 ```
 Response
@@ -152,7 +152,7 @@ Response
 #### Fetch transaction data from rlp encoded list
 
 Request
-```http
+```bash
   GET /lime/eth/f863a08e5484577d7f6bc0dd7d6a7016a55e3e33a43ece50c4c11aad074b3d728a8d35a07addeb71d33c4824e31b30d92894e0e1d2e0c0a13d8e1020aaad80d5b3ee32eca0031b20239d55bee927ab7bc0510748628438a6d08dccffbb0da61f3b72bc71ed
 ```
 Response
@@ -202,7 +202,7 @@ Response
 #### Authenticate
 
 Request
-```http
+```bash
   POST /lime/authenticate
 ```
 Body
